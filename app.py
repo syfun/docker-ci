@@ -1,34 +1,29 @@
-from flask import Flask, jsonify, request
-import docker
+import time
 
-import json
+from flask import Flask
+from celery import Celery
+from sh import docker
 
 
 app = Flask(__name__)
 
-client = docker.APIClient(base_url='unix://var/run/docker.sock ')
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
 
 
-def build():
-    print('build')
-
-    for line in client.build(path='./', rm=True, tag='demo:latest'):
-        ss = line.strip(b'\r\n').split(b'\r\n')
-        for c in ss:
-            cc = json.loads(c)
-            if 'stream' in cc:
-                print(cc['stream'], end='')
-
-def push():
-    print('push')
-    r = client.push('localhost:8080/demo:latest')
-    print(r)
+@celery.task
+def build(image, path):
+    ts = int(time.time())
+    with open(f'{ts}.log', 'a') as f:
+        docker("build", "-t", image, path, _out=f)
 
 
-@app.route('/github-webhook/', methods=['POST'])
+@app.route('/github-webhook/', methods=['GET'])
 def webhook():
-    build()
-    push()
+    build.delay("demo:latest", "./")
     return 'ok'
 
 
