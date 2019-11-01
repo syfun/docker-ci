@@ -6,7 +6,10 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-docker = "*"
+sh = "==1.12.14"
+flask = "==1.1.1"
+celery = "==4.3.0"
+redis = "==3.3.11"
 
 [requires]
 python_version = "3.7"

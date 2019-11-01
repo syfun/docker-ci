@@ -13,6 +13,19 @@ app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
+PROJECT_CONFIG = {
+    "seely": {
+        "id": 1,
+        "repo": "teletraan/seely-bk",
+        "branch": "dev",
+        "image": "192.168.1.5:5000/teletraan/seely",
+        "tag": "latest",
+        "build_args": {
+            "file": "",
+            "path": "./"
+        }
+    }
+}
 
 @celery.task
 def build(image, path):
@@ -21,8 +34,11 @@ def build(image, path):
         docker("build", "-t", image, path, _out=f)
 
 
-@app.route('/github-webhook/', methods=['GET'])
-def webhook():
+@app.route('/github-webhook/<project>/', methods=['GET'])
+def webhook(project):
+    if project not in PROJECT_CONFIG:
+        return 'no this project config'
+
     build.delay("demo:latest", "./")
     return 'ok'
 

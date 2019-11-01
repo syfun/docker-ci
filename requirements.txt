@@ -1,2 +1,4 @@
 sh==1.12.14     # https://amoffat.github.io/sh/index.html
 Flask==1.1.1
+celery==4.3.0
+redis==3.3.11
